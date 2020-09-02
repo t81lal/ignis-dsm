@@ -12,4 +12,29 @@ public class StringUtil {
         }
         return new String(hexChars);
     }
+
+    public static String javaEscapeString(String str) {
+        return str.replace("\\", "\\\\").replace("\t", "\\t").replace("\b", "\\b").replace("\n", "\\n")
+                .replace("\r", "\\r").replace("\f", "\\f").replace("\'", "\\'").replace("\"", "\\\"");
+    }
+
+    public static String javaEscapeCharacter(char c) {
+        if (c == '\'') {
+            return "\\'";
+        } else if (c == '\\') {
+            return "\\\\";
+        } else if (c == '\t') {
+            return "\\t";
+        } else if (c == '\n') {
+            return "\\n";
+        } else if (c == '\r') {
+            return "\\r";
+        } else if (c == '\f') {
+            return "\\f";
+        } else if (c >= 33 && c <= 126) {
+            return Character.toString(c);
+        } else {
+            return "\\u" + Integer.toHexString((int) c);
+        }
+    }
 }

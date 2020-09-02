@@ -1,7 +1,6 @@
 package com.bilbtopia.forager.dsm;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -139,23 +138,7 @@ public class ASMPrinter extends BasePrinter<ASMPrinter> {
     }
 
     private ASMPrinter printCharacterLiteral(char c) {
-        if (c == '\'') {
-            return _emitCharacter("\\'");
-        } else if (c == '\\') {
-            return _emitCharacter("\\\\");
-        } else if (c == '\t') {
-            return _emitCharacter("\\t");
-        } else if (c == '\n') {
-            return _emitCharacter("\\n");
-        } else if (c == '\r') {
-            return _emitCharacter("\\r");
-        } else if (c == '\f') {
-            return _emitCharacter("\\f");
-        } else if (c >= 33 && c <= 126) {
-            return _emitCharacter(Character.toString(c));
-        } else {
-            return _emitCharacter("\\u" + Integer.toHexString((int) c));
-        }
+        return _emitCharacter(StringUtil.javaEscapeCharacter(c));
     }
 
     private <N extends Number> ASMPrinter printNumericLiteral(String prefix, N n, Function<N, String> toString) {
@@ -163,9 +146,7 @@ public class ASMPrinter extends BasePrinter<ASMPrinter> {
     }
 
     private ASMPrinter printStringLiteral(String str) {
-        String escapedStr = str.replace("\\", "\\\\").replace("\t", "\\t").replace("\b", "\\b").replace("\n", "\\n")
-                .replace("\r", "\\r").replace("\f", "\\f").replace("\'", "\\'").replace("\"", "\\\"");
-        return emit("\"").emit(escapedStr, false).emit("\"", false);
+        return emit("\"").emit(StringUtil.javaEscapeString(str), false).emit("\"", false);
     }
 
     private ASMPrinter printAnnotationNode(AnnotationNode node) {
