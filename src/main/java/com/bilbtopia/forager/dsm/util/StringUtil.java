@@ -37,4 +37,18 @@ public class StringUtil {
             return "\\u" + Integer.toHexString((int) c);
         }
     }
+
+    public static String getSimpleKlassName(String fullPackageKlass) {
+        String[] parts = fullPackageKlass.split("/");
+        return parts[parts.length - 1];
+    }
+
+    public static String getInnerKlassName(String fullPackageKlass) {
+        String klassName = getSimpleKlassName(fullPackageKlass);
+        if (!klassName.contains("$")) {
+            throw new IllegalArgumentException("Not inner class name");
+        }
+        String[] innerParts = klassName.split("\\$");
+        return innerParts[innerParts.length - 1];
+    }
 }

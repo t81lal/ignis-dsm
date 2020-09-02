@@ -14,6 +14,7 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldNode;
+import org.objectweb.asm.tree.InnerClassNode;
 import org.objectweb.asm.tree.TypeAnnotationNode;
 
 import com.bilbtopia.forager.dsm.util.ReflectionUtil;
@@ -192,6 +193,19 @@ public class ASMPrinter extends BasePrinter<ASMPrinter> {
         });
     }
 
+    private ASMPrinter printInnerClasses(List<InnerClassNode> klasses) {
+        return printList(klasses, k -> {
+            // InnerClassName innerName and outerName are linked to this klass and this inner klass so don't repeat
+            if (!k.outerName.equals(klass.name)) {
+                throw new IllegalArgumentException("Outer: " + k.outerName + " but we're in " + k.name);
+            }
+            if (!k.innerName.equals(StringUtil.getInnerKlassName(k.name))) {
+                throw new IllegalArgumentException("Full name: " + k.name + " but simple is: " + k.innerName);
+            }
+            printDirectiveName("innerClass").printInteger(k.access).printKlassType(k.name);
+        });
+    }
+
     private Map<String, Object> getValuePairs(List<Object> values) {
         if (values == null || values.isEmpty()) {
             return Collections.emptyMap();
@@ -223,6 +237,8 @@ public class ASMPrinter extends BasePrinter<ASMPrinter> {
         printAnnotationTable("invisibleType", klass.invisibleTypeAnnotations);
         printAnnotationTable("visible", klass.visibleAnnotations);
         printAnnotationTable("visibleType", klass.visibleTypeAnnotations);
+        printRawAttributes(klass.attrs);
+        printInnerClasses(klass.innerClasses);
 
         // Add extra space before the class declaration
         newLine().emit("class").printKlassType(klass.name).newLine();
@@ -267,7 +283,7 @@ public class ASMPrinter extends BasePrinter<ASMPrinter> {
     }
 
     public static void main(String[] args) throws IOException {
-        ClassReader cr = new ClassReader(ASMPrinter.class.getCanonicalName());
+        ClassReader cr = new ClassReader(WithInners.class.getCanonicalName());
         ClassNode cn = new ClassNode();
         cr.accept(cn, 0);
 
