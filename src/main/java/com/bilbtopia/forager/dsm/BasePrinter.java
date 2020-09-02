@@ -38,14 +38,22 @@ public abstract class BasePrinter<Self extends BasePrinter<Self>> {
     }
 
     private void __emit(String str) {
+        if (built) {
+            built = false;
+            builtString = null;
+        }
+        builder.append(str);
+    }
+
+    private void emitWithIndent(String str) {
         if (isIndentPrimed) {
             // Finally do the indent
             for (int i = 0; i < indentLevel; i++) {
-                builder.append(indentStr);
+                __emit(indentStr);
             }
             isIndentPrimed = false;
         }
-        builder.append(str);
+        __emit(str);
     }
 
     @SuppressWarnings("unchecked")
@@ -61,9 +69,9 @@ public abstract class BasePrinter<Self extends BasePrinter<Self>> {
     @SuppressWarnings("unchecked")
     public Self emit(String str, boolean printSep) {
         if (requireWordSep && printSep) {
-            __emit(wordSep);
+            emitWithIndent(wordSep);
         }
-        __emit(str);
+        emitWithIndent(str);
         requireWordSep = true;
         return (Self) this;
     }
