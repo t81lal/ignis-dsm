@@ -15,6 +15,7 @@ import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.InnerClassNode;
+import org.objectweb.asm.tree.RecordComponentNode;
 import org.objectweb.asm.tree.TypeAnnotationNode;
 
 import com.bilbtopia.forager.dsm.util.ReflectionUtil;
@@ -197,13 +198,37 @@ public class ASMPrinter extends BasePrinter<ASMPrinter> {
         return printList(klasses, k -> {
             // InnerClassName innerName and outerName are linked to this klass and this inner klass so don't repeat
             if (!k.outerName.equals(klass.name)) {
-                throw new IllegalArgumentException("Outer: " + k.outerName + " but we're in " + k.name);
+//                throw new IllegalArgumentException("Outer: " + k.outerName + " but we're in " + klass.name);
             }
             if (!k.innerName.equals(StringUtil.getInnerKlassName(k.name))) {
                 throw new IllegalArgumentException("Full name: " + k.name + " but simple is: " + k.innerName);
             }
             printDirectiveName("innerClass").printInteger(k.access).printKlassType(k.name);
         });
+    }
+    
+    private ASMPrinter printRecordComponents(List<RecordComponentNode> recs) {
+        return printList(recs, r -> {
+            printDirectiveName("record").printRecordComponent(r);
+        });
+    }
+
+    private void printRecordComponent(RecordComponentNode r) {
+        emit("{").incIndent();
+        
+        newLine().emit("name = ").printStringLiteral(r.name);
+        newLine().emit("descriptor = ").printTypeLiteral(Type.getType(r.descriptor));
+        if(r.signature != null) {
+            newLine().emit("signature = ").printStringLiteral(r.signature);
+        }
+
+        printAnnotationTable("invisible", r.invisibleAnnotations);
+        printAnnotationTable("invisibleType", r.invisibleTypeAnnotations);
+        printAnnotationTable("visible", r.visibleAnnotations);
+        printAnnotationTable("visibleType", r.visibleTypeAnnotations);
+        printRawAttributes(r.attrs);
+
+        decIndent().newLine().emit("}");
     }
 
     private Map<String, Object> getValuePairs(List<Object> values) {
@@ -218,7 +243,7 @@ public class ASMPrinter extends BasePrinter<ASMPrinter> {
         return pairs;
     }
 
-    private void printKlass() {
+    public void printKlass() {
         printLiteralDirective("sourceFile", klass.sourceFile);
         printLiteralDirective("sourceDebug", klass.sourceDebug);
 
@@ -239,6 +264,9 @@ public class ASMPrinter extends BasePrinter<ASMPrinter> {
         printAnnotationTable("visibleType", klass.visibleTypeAnnotations);
         printRawAttributes(klass.attrs);
         printInnerClasses(klass.innerClasses);
+        
+        printDirective("nestHostClass", klass.nestHostClass, this::printKlassType);
+        printDirective("nestMembers", klass.nestMembers, this::printKlassTypes);
 
         // Add extra space before the class declaration
         newLine().emit("class").printKlassType(klass.name).newLine();
@@ -283,7 +311,8 @@ public class ASMPrinter extends BasePrinter<ASMPrinter> {
     }
 
     public static void main(String[] args) throws IOException {
-        ClassReader cr = new ClassReader(WithInners.class.getCanonicalName());
+//        ClassReader cr = new ClassReader(ASMPrinter.class.getResourceAsStream("/recordtest/Person.class"));
+      ClassReader cr = new ClassReader(ASMPrinter.class.getCanonicalName());
         ClassNode cn = new ClassNode();
         cr.accept(cn, 0);
 
